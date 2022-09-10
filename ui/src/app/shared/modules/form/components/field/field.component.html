@@ -237,6 +237,7 @@
       [matDatepicker]="fieldId"
       [placeholder]="field?.placeholder"
       [formControlName]="field?.key"
+      [max]="maxdate"
       (dateChange)="onFieldUpdate()"
     />
     <mat-datepicker-toggle matSuffix [for]="fieldId"></mat-datepicker-toggle>

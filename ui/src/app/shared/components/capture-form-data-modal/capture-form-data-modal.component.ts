@@ -25,11 +25,13 @@ import {
 } from "src/app/store/selectors/observation.selectors";
 import { getActiveVisit } from "src/app/store/selectors/visit.selectors";
 import { OpenMRSForm } from "../../modules/form/models/custom-openmrs-form.model";
+import { DateField } from "../../modules/form/models/date-field.model";
 import { FormValue } from "../../modules/form/models/form-value.model";
 import { OpenmrsHttpClientService } from "../../modules/openmrs-http-client/services/openmrs-http-client.service";
 import { ICARE_CONFIG } from "../../resources/config";
 import { ObservationService } from "../../resources/observation/services";
 import { Patient } from "../../resources/patient/models/patient.model";
+import { PatientService } from "../../resources/patient/services/patients.service";
 import { Visit } from "../../resources/visits/models/visit.model";
 
 @Component({
@@ -59,12 +61,15 @@ export class CaptureFormDataModalComponent implements OnInit {
   isValid: boolean = false;
 
   deathFormFields: any[];
+  deathDateField: any[];
+  deathDate: any;
   constructor(
     private store: Store<AppState>,
     @Inject(MAT_DIALOG_DATA) data,
     private dialogRef: MatDialogRef<CaptureFormDataModalComponent>,
     private observationService: ObservationService,
-    private systemSettingsService: SystemSettingsService
+    private systemSettingsService: SystemSettingsService,
+    private patientService: PatientService
   ) {
     this.patient = data?.patient?.patient;
     this.formUuid = data?.form?.formUuid;
@@ -107,6 +112,17 @@ export class CaptureFormDataModalComponent implements OnInit {
       select(getSavingObservationStatus)
     );
     this.observations$ = this.store.select(getGroupedObservationByConcept);
+
+    this.deathDateField = [
+      new DateField({
+        id: "deathDate",
+        key: "deathDate",
+        label: "Date of death",
+        required: true,
+        value: null,
+        type: "date",
+      }),
+    ];
   }
 
   onClose(e) {
@@ -158,6 +174,11 @@ export class CaptureFormDataModalComponent implements OnInit {
     // console.log('location', location);
   }
 
+  onDateOfDeathUpdate(formValue: FormValue) {
+    this.formData = { ...this.formData, ...formValue.getValues() };
+    this.deathDate = this.formData.deathDate.value._d;
+  }
+
   saveCurrentFormData(e: Event, deathRegistryFormUuid: string): void {
     e.stopPropagation();
     console.log(this.encounterObject);
@@ -170,6 +191,14 @@ export class CaptureFormDataModalComponent implements OnInit {
 
     if (this.formUuid === deathRegistryFormUuid) {
       // TODO: Mark as deceased
+
+      const patient = {
+        uuid: this.patient.uuid,
+        dead: true,
+      };
+      this.patientService
+        .updatePatientDetails(patient)
+        .subscribe((result) => console.log(result));
     }
   }
 }

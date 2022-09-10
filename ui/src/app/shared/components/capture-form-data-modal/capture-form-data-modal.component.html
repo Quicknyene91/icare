@@ -26,6 +26,11 @@
       "
     >
       <mat-dialog-content class="mt-2 ml-1 mr-1">
+        <app-form
+          *ngIf="params?.form?.id === params?.deathRegistryFormUuid"
+          [fields]="deathDateField"
+          (formUpdate)="onDateOfDeathUpdate($event)"
+        ></app-form>
         <app-capture-form-data
           [form]="params?.form"
           [visit]="visit"

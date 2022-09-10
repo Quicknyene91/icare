@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { omit } from "lodash";
 import { Observable, of } from "rxjs";
 import {
   catchError,
@@ -47,5 +48,14 @@ export class PatientService {
         return response;
       })
     );
+  }
+  updatePatientDetails(patient): Observable<any> {
+    return this.httpClient
+      .post(`patient/${patient.uuid}`, omit(patient, "uuid"))
+      .pipe(
+        map((response) => {
+          return response;
+        })
+      );
   }
 }
