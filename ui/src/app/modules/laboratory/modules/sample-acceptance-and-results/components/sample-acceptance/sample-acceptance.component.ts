@@ -27,6 +27,7 @@ import { PrintResultsModalComponent } from "../print-results-modal/print-results
 import { RejectionReasonComponent } from "../rejection-reason/rejection-reason.component";
 import { ResultReviewModalComponent } from "../result-review-modal/result-review-modal.component";
 import { ResultsFeedingModalComponent } from "../results-feeding-modal/results-feeding-modal.component";
+import { UpdateSampleComponent } from "../update-sample/update-sample.component";
 
 @Component({
   selector: "app-sample-acceptance",
@@ -464,5 +465,16 @@ export class SampleAcceptanceComponent implements OnInit {
     this.settingLabSampleStatus$ = this.store.select(
       getSettingLabSampleStatusState
     );
+  }
+
+  onUpdateSample(sample: any){
+    this.dialog.open(UpdateSampleComponent, {
+      data: {
+        sample: sample
+      },
+      width: "60%",
+      height: "750px",
+      disableClose: false,
+    })
   }
 }

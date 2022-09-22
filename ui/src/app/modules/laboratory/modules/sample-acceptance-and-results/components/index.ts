@@ -25,6 +25,7 @@ import { SampleAcceptanceComponent } from "./sample-acceptance/sample-acceptance
 import { RejectAnswerModalComponent } from "./reject-answer-modal/reject-answer-modal.component";
 import { LabClinicalNotesSummaryComponent } from "./lab-clinical-notes-summary/lab-clinical-notes-summary.component";
 import { ResultReviewModalComponent } from "./result-review-modal/result-review-modal.component";
+import { UpdateSampleComponent } from "./update-sample/update-sample.component";
 
 export const components: any[] = [
   PatientsByVisitsListComponent,
@@ -54,8 +55,10 @@ export const components: any[] = [
   RejectAnswerModalComponent,
   LabClinicalNotesSummaryComponent,
   ResultReviewModalComponent,
+  UpdateSampleComponent
 ];
 
 export const sampleAcceptanceAndResultsModals: any[] = [
   ResultReviewModalComponent,
+  UpdateSampleComponent
 ];

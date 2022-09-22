@@ -194,7 +194,7 @@
                     *ngIf="orderCount == 0"
                     [attr.rowspan]="sample?.orders?.length"
                   >
-                    <div class="d-flex justify-content-center">
+                    <div class="d-flex justify-content-center w-100">
                       <button
                         [disabled]="
                           sample.accepted ||
@@ -216,6 +216,18 @@
                         >
                         </mat-spinner>
                         Accept
+                      </button>
+                      <button
+                        [disabled]="
+                          sample.accepted ||
+                          sample.rejected ||
+                          sampleParams?.settingLabSampleStatus
+                        "
+                        mat-stroked-button
+                        class="update-button ml-2"
+                        (click)="onUpdateSample(sample)"
+                        >
+                        Update
                       </button>
 
                       <button
