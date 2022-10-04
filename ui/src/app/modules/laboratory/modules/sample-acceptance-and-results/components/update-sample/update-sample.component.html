@@ -1,1 +1,38 @@
-<p> update sample works!</p>
+<div *ngIf="data.sample">
+    <div>
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Test</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let order of data.sample.orders">
+                    <tr>
+                        <td [attr.rowspan]="order?.testAllocations.length + 1">
+                            {{ order?.order?.orderNumber }}
+                        </td>
+                    </tr>
+                </ng-container>
+                <ng-container *ngFor="let order of data.sample.orders">
+                     <ng-container *ngFor="let allocation of order?.testAllocations">
+                        <tr rowspan="1">
+                            <td>
+                                {{ allocation?.concept?.display }}
+                            </td>
+                            <td>ACTIVE</td>
+                            <td>
+                                <button mat-button class="colored-button" (click)="onRetiringTest($event, allocation)">
+                                    Retire
+                                </button>
+                            </td>
+                        </tr>
+                    </ng-container>
+                </ng-container>
+            </tbody>
+        </table>
+    </div>
+</div>

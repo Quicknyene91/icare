@@ -473,8 +473,7 @@ export class SampleAcceptanceComponent implements OnInit {
       data: {
         sample: sample
       },
-      width: "60%",
-      height: "750px",
+      width: "40%",
       disableClose: false,
     })
   }
