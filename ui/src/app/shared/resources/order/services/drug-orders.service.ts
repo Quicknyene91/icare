@@ -177,7 +177,11 @@ export class DrugOrdersService {
   }
 
   updateDrugOrder(order): Observable<any> {
-    return from(this.openmrsService.put("order/" + order.uuid, order));
+    return from(this.openmrsService.put("order/" + order.uuid, order)).pipe(
+      catchError((error) => {
+        return of(error);
+      })
+    );
   }
 
   getDrugOrderEncounter(
@@ -194,7 +198,11 @@ export class DrugOrdersService {
     const encounterID = `${order.patient}_${location}_${orderIntention}`;
 
     if (this._encounterEntities[encounterID]) {
-      return of(this._encounterEntities[encounterID]);
+      return of(this._encounterEntities[encounterID]).pipe(
+        catchError((error) => {
+          return of(error);
+        })
+      );
     }
 
     return this.getOrderEncounterType(orderIntention).pipe(
@@ -220,6 +228,9 @@ export class DrugOrdersService {
         ).pipe(
           tap((encounterResponse) => {
             this._encounterEntities[encounterID] = encounterResponse;
+          }),
+          catchError((error) => {
+            return of(error);
           })
         );
       })
@@ -236,7 +247,11 @@ export class DrugOrdersService {
       switchMap((res) => {
         const orderTypeSetting: any = res?.results ? res.results[0] : null;
         return orderTypeSetting?.value
-          ? from(this.api.ordertype.getOrderType(orderTypeSetting.value))
+          ? from(this.api.ordertype.getOrderType(orderTypeSetting.value)).pipe(
+              catchError((error) => {
+                return of(error);
+              })
+            )
           : of(null);
       })
     );
@@ -309,25 +324,45 @@ export class DrugOrdersService {
         "Reference application common drug allergens",
         "full"
       )
+    ).pipe(
+      catchError((error) => {
+        return of(error);
+      })
     );
   }
 
   getDosingUnit() {
-    return from(this.getSetMembersAsOptions("Dosing Unit", "full"));
+    return from(this.getSetMembersAsOptions("Dosing Unit", "full")).pipe(
+      catchError((error) => {
+        return of(error);
+      })
+    );
   }
 
   getOrderFrequency() {
-    return from(this.getDrugOrdersFrequency("full"));
+    return from(this.getDrugOrdersFrequency("full")).pipe(
+      catchError((error) => {
+        return of(error);
+      })
+    );
   }
 
   getDrugRoutes() {
     return from(
       this.getSetMembersAsOptions("Routes of administration", "full")
+    ).pipe(
+      catchError((error) => {
+        return of(error);
+      })
     );
   }
 
   getDurationUnits() {
-    return from(this.getConceptAnswersAsOptions("Duration units", "full"));
+    return from(this.getConceptAnswersAsOptions("Duration units", "full")).pipe(
+      catchError((error) => {
+        return of(error);
+      })
+    );
   }
 
   getDrugOrderMetadata(
@@ -336,7 +371,7 @@ export class DrugOrdersService {
     fromDispensing: boolean,
     doctorPrescriptionDetails: any,
     metadataConfigs: any
-  ): Observable<DrugOrderMetadata> {
+  ): Observable<any> {
     return zip(
       this.getOrderType(),
       this.getDosingUnit(),
@@ -347,8 +382,11 @@ export class DrugOrdersService {
         ...locations.map((location) =>
           this.stockService.getAvailableStocks(location.id)
         )
-      ).pipe(map((res) => flatten(res))),
-      this.getAllDrugs("full")
+      ).pipe(
+        map((res) => {
+          return flatten(res);
+        })
+      )
     ).pipe(
       map((res) => {
         const metadata = {
@@ -359,7 +397,6 @@ export class DrugOrdersService {
           drugRoutes: res[3],
           durationUnits: res[4],
           stockedDrugs: res[5],
-          drugs: res[6],
         };
 
         const drugFormField = new Dropdown({
@@ -544,6 +581,9 @@ export class DrugOrdersService {
           durationFormFields,
           doseFormFields,
         };
+      }),
+      catchError((error) => {
+        return of(error);
       })
     );
   }

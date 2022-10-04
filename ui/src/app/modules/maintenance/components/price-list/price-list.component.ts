@@ -10,6 +10,7 @@ import { MatSelectChange } from "@angular/material/select";
 import { select, Store } from "@ngrx/store";
 import { find } from "lodash";
 import { Observable } from "rxjs";
+import { tap } from "rxjs/operators";
 import { PaymentScheme } from "src/app/shared/models/payment-scheme.model";
 import { PaymentTypeInterface } from "src/app/shared/models/payment-type.model";
 import { Field } from "src/app/shared/modules/form/models/field.model";
@@ -73,6 +74,10 @@ export class PriceListComponent implements OnInit, OnChanges {
   paymentTypesAndSchemes: any[] = [];
   currentPage: number = 0;
 
+  priceListDepartments$: Observable<any[]>;
+  selectedPriceListDepartment: any;
+  errors: any[] = [];
+
   constructor(
     private dialog: MatDialog,
     private itemPriceService: ItemPriceService,
@@ -83,6 +88,8 @@ export class PriceListComponent implements OnInit, OnChanges {
   ngOnInit() {
     this.currentDepartmentId = this.departmentId;
     this.loadData();
+    this.priceListDepartments$ =
+      this.itemPriceService.getDepartmentsByMappingSearchQuery("PRICE_LIST");
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -149,7 +156,6 @@ export class PriceListComponent implements OnInit, OnChanges {
         const availableItem =
           find(pricingItems, ["drug", drug?.uuid]) ||
           find(pricingItems, ["concept", concept?.uuid]);
-
         if (false) {
           console.warn("ITEM ALREADY EXIST");
         } else {
@@ -158,19 +164,55 @@ export class PriceListComponent implements OnInit, OnChanges {
           if (priceItemInput) {
             this.itemPriceService
               .createItem(priceItemInput, this.paymentSchemes)
+              .pipe(
+                tap((response) => {
+                  if (response.error) {
+                    this.addingPricingItem = false;
+                    this.errors = [
+                      ...this.errors,
+                      response.error,
+                      {
+                        error: {
+                          message: response?.message,
+                          detail: response?.error,
+                        },
+                      },
+                    ];
+                  }
+                })
+              )
               .subscribe((itemPrices) => {
                 this.priceList = [...itemPrices, ...this.priceList];
               });
           } else {
-            this.pricingService.createPricingItem(concept, drug).subscribe(
-              (pricingItem: PricingItemInterface) => {
-                this.addingPricingItem = false;
-                this.store.dispatch(upsertPricingItem({ pricingItem }));
-              },
-              () => {
-                this.addingPricingItem = false;
-              }
-            );
+            this.pricingService
+              .createPricingItem(concept, drug)
+              .pipe(
+                tap((response) => {
+                  if (response.error) {
+                    this.addingPricingItem = false;
+                    this.errors = [
+                      ...this.errors,
+                      {
+                        error: {
+                          message: response?.message,
+                          detail: response?.error,
+                        },
+                      },
+                    ];
+                  }
+                })
+              )
+              .subscribe(
+                (pricingItem: PricingItemInterface) => {
+                  this.addingPricingItem = false;
+                  this.store.dispatch(upsertPricingItem({ pricingItem }));
+                },
+                () => {
+                  this.addingPricingItem = false;
+                }
+              );
+            this.addingPricingItem = false;
           }
         }
       }
@@ -186,7 +228,12 @@ export class PriceListComponent implements OnInit, OnChanges {
   }
 
   onSaveItem(itemPrice): void {
-    this.store.dispatch(saveItemPrice({ itemPrice }));
+    // this.store.dispatch(saveItemPrice({ itemPrice }));
+    this.pricingService.saveItemPrice(itemPrice).subscribe((response) => {
+      if (response && !response?.error) {
+        this.loadData();
+      }
+    });
   }
 
   onFormUpdate(
@@ -234,7 +281,7 @@ export class PriceListComponent implements OnInit, OnChanges {
     );
   }
 
-  onSearch(e: any, departmentId: string) {
+  onSearch(e: any, departmentId: string): void {
     e.stopPropagation();
     this.itemSearchTerm = e?.target?.value;
     if (
@@ -253,5 +300,11 @@ export class PriceListComponent implements OnInit, OnChanges {
         })
       );
     }
+  }
+
+  getSelectedDepartment(event: MatSelectChange): void {
+    this.selectedPriceListDepartment = event?.value;
+    this.currentDepartmentId = this.selectedPriceListDepartment?.uuid;
+    this.loadData();
   }
 }

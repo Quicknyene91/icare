@@ -34,6 +34,8 @@ import { PhoneNumber } from "src/app/shared/modules/form/models/phone-number.mod
 import { ConceptsService } from "src/app/shared/resources/concepts/services/concepts.service";
 import { ThisReceiver } from "@angular/compiler";
 import { clearActiveVisit } from "src/app/store/actions/visit.actions";
+import { map, tap } from "rxjs/operators";
+import { Dropdown } from "src/app/shared/modules/form/models/dropdown.model";
 
 @Component({
   selector: "app-registration-add",
@@ -56,6 +58,11 @@ export class RegistrationAddComponent implements OnInit {
   @Input() patientInformation: any;
   @Input() registrationFormConfigs: any;
   @Input() editMode: boolean;
+  @Input() occupationConceptUuid: string;
+  @Input() additionalClientInformationConceptUuid: string;
+  @Input() relationShipTypesConceptUuid: string;
+  @Input() genderOptionsConceptUuid: string;
+  @Input() residenceDetailsLocationUuid: string;
 
   registrationFormConfigsKeyedByProperty: any = {};
 
@@ -81,7 +88,13 @@ export class RegistrationAddComponent implements OnInit {
   maritalstatusInfo$: Observable<any[]>;
   relationTypeOptions$: Observable<any>;
   selectedIdFormat: string;
-
+  errors: any[] = [];
+  regionindex: number;
+  newreg: string;
+  newDistrict: string;
+  newArea: string;
+  residenceDetailsLocation$: Observable<any>;
+  districtindex: number;
   constructor(
     private _snackBar: MatSnackBar,
     private router: Router,
@@ -191,6 +204,7 @@ export class RegistrationAddComponent implements OnInit {
     category: "phoneNumber",
   });
   isPhoneNumberCorrect: boolean = false;
+  showPatientType$: Observable<boolean>;
 
   onPrimaryMobileNumberFormUpdate(formValueObject: FormValue): void {
     this.patient["phone"] =
@@ -215,9 +229,19 @@ export class RegistrationAddComponent implements OnInit {
   setNewPatient(option) {
     this.patient.newPatient = option;
   }
+  onSelectRegion(e, regionindex: number): void {
+    if (e) {
+      this.regionindex = regionindex;
+    }
+  }
+  onSelectDistrict(e, index: number): void {
+    if (e) {
+      this.districtindex = index;
+    }
+  }
 
   dateSet() {
-    // // console.log(this.patient?.dob);
+    //console.log(this.patient?.dob);
 
     let birthdate = new Date(this.patient?.dob);
     let ageObject = getDateDifferenceYearsMonthsDays(birthdate, new Date());
@@ -230,34 +254,38 @@ export class RegistrationAddComponent implements OnInit {
     };
   }
 
+  getResidenceContactDetails() {}
   getAdditionalInformationValues(formValues): void {
-    //console.log("formValues", formValues)
-    //console.log(this.registrationFormConfigsKeyedByProperty)
-
-    /* this.patient.occupation =
-      formValues[
-        this.registrationFormConfigsKeyedByProperty["occupation"]?.value
-      ].value; */
     this.patient.maritalStatus =
       formValues[
         this.registrationFormConfigsKeyedByProperty["maritalStatus"]?.value
-      ].value;
+      ]?.value;
     this.patient.religion =
       formValues[
         this.registrationFormConfigsKeyedByProperty["religion"]?.value
-      ].value;
+      ]?.value;
     this.patient.education =
       formValues[
         this.registrationFormConfigsKeyedByProperty["education"]?.value
-      ].value;
+      ]?.value;
     this.patient["areaLeader"] =
       formValues[
         this.registrationFormConfigsKeyedByProperty["areaLeaderName"]?.value
-      ].value;
+      ]?.value;
     this.patient["areaLeaderNumber"] =
       formValues[
         this.registrationFormConfigsKeyedByProperty["areaLeaderNumber"]?.value
-      ].value;
+      ]?.value;
+
+    if (
+      this.registrationFormConfigsKeyedByProperty["occupation"] &&
+      this.registrationFormConfigsKeyedByProperty["occupation"]?.value
+    ) {
+      this.patient["occupation"] =
+        formValues[
+          this.registrationFormConfigsKeyedByProperty["occupation"]?.value
+        ]?.value;
+    }
   }
 
   //setEducationDetails(education) {
@@ -281,28 +309,34 @@ export class RegistrationAddComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.residenceDetailsLocation$ = this.locationService.getLocationById(
+      this.residenceDetailsLocationUuid
+    );
     this.currentLocation$ = this.store.select(getCurrentLocation);
+    this.showPatientType$ =
+      this.systemSettingsService.getSystemSettingsDetailsByKey(
+        `icare.registration.settings.showPatientTypeField`
+      );
     this.registrationFormConfigsKeyedByProperty = keyBy(
       this.registrationFormConfigs,
       "referenceKeyPart"
     );
     this.store.dispatch(clearActiveVisit());
-
     this.genderOptions$ = this.conceptService.getConceptDetailsByUuid(
-      "bad70d90-9bac-401a-8c49-a440f6a07bf5",
+      this.genderOptionsConceptUuid,
       "custom:(uuid,display,names,answers:(uuid,display,names,mappings))"
     );
     this.additionalPatientInformation$ =
       this.conceptService.getConceptDetailsByUuid(
-        "b2399b15-a38d-47f9-8e15-fc7e7c7dc1f3",
+        this.additionalClientInformationConceptUuid,
         "custom:(uuid,display,names,answers:(uuid,display,names),setMembers:(uuid,display,answers:(uuid,display,names)))"
       );
     this.occupationInfo$ = this.conceptService.getConceptDetailsByUuid(
-      "c3d16c94-4e03-4b19-9491-43d10f470981",
+      this.occupationConceptUuid,
       "custom:(uuid,display,names,answers:(uuid,display,names),setMembers:(uuid,display,answers:(uuid,display,names)))"
     );
     this.relationTypeOptions$ = this.conceptService.getConceptDetailsByUuid(
-      "a74b0803-0aae-43a7-84f9-2daa2cd19332",
+      this.relationShipTypesConceptUuid,
       "custom:(uuid,display,names,answers:(uuid,display,names,mappings))"
     );
     /*
@@ -554,6 +588,9 @@ export class RegistrationAddComponent implements OnInit {
                 this.errorAddingPatient = true;
                 this.patientAdded = false;
                 this.addingPatient = false;
+                this.errors = [...this.errors, errorUpdatingPatient.error];
+
+                /* 
                 this.errorMessage = errorUpdatingPatient?.error?.error
                   ? errorUpdatingPatient?.error?.error?.message +
                     `: ${(
@@ -563,7 +600,7 @@ export class RegistrationAddComponent implements OnInit {
                     ).join(" and ")}`
                   : "Error editing patient/client";
 
-                this.openSnackBar("Error editin patient", null);
+                this.openSnackBar("Error editing patient", null); */
               }
             );
         } else {
@@ -590,45 +627,59 @@ export class RegistrationAddComponent implements OnInit {
                 };
                 this.registrationService
                   .createPatient(patientPayload)
+                  .pipe(
+                    tap((response) => {
+                      if (response.error) {
+                        this.openSnackBar("Error registering patient", null);
+                        this.errorAddingPatient = true;
+                        this.patientAdded = false;
+                        this.addingPatient = false;
+                        this.errors = [...this.errors, response.error];
+                      }
+                    })
+                  )
                   .subscribe(
                     (patientResponse) => {
-                      this.errorAddingPatient = false;
-                      let patient = new Patient(patientResponse);
-                      //// console.log('patient created ::', {patient: {...patientResponse} as any}patientResponse);
+                      if (!patientResponse.error) {
+                        // console.log("this response:", patientResponse);
+                        this.errorAddingPatient = false;
+                        let patient = new Patient(patientResponse);
+                        //// console.log('patient created ::', {patient: {...patientResponse} as any}patientResponse);
 
-                      //patient added succesfully
+                        //patient added succesfully
 
-                      this.store.dispatch(
-                        loadCurrentPatient({
-                          uuid: patientResponse["uuid"],
-                          isRegistrationPage: true,
-                        })
-                      );
-
-                      setTimeout(() => {
-                        this.patientAdded = true;
-                        this.addingPatient = false;
-
-                        // this.store.dispatch(addCurrentPatient({patient}))
-                        this.dialog
-                          .open(StartVisitModelComponent, {
-                            width: "85%",
-                            data: { patient: patientResponse },
+                        this.store.dispatch(
+                          loadCurrentPatient({
+                            uuid: patientResponse["uuid"],
+                            isRegistrationPage: true,
                           })
-                          .afterClosed()
-                          .subscribe((visitDetails) => {
-                            if (visitDetails) {
-                              // this.dialog.open(VisitStatusConfirmationModelComponent, {
-                              //   width: "30%",
-                              //   height: "100px",
-                              // });
-                            }
-                          });
+                        );
 
-                        // this.store.dispatch(go({ path: ['/registration/visit'] }));
-                      }, 500);
-                    },
-                    (patientError) => {
+                        setTimeout(() => {
+                          this.patientAdded = true;
+                          this.addingPatient = false;
+
+                          // this.store.dispatch(addCurrentPatient({patient}))
+                          this.dialog
+                            .open(StartVisitModelComponent, {
+                              width: "85%",
+                              data: { patient: patientResponse },
+                            })
+                            .afterClosed()
+                            .subscribe((visitDetails) => {
+                              if (visitDetails) {
+                                // this.dialog.open(VisitStatusConfirmationModelComponent, {
+                                //   width: "30%",
+                                //   height: "100px",
+                                // });
+                              }
+                            });
+
+                          // this.store.dispatch(go({ path: ['/registration/visit'] }));
+                        }, 500);
+                      }
+                    }
+                    /* (patientError) => {
                       this.errorAddingPatient = true;
                       this.patientAdded = false;
                       this.addingPatient = false;
@@ -636,13 +687,13 @@ export class RegistrationAddComponent implements OnInit {
                         ? patientError?.error?.error?.message +
                           `: ${(
                             patientError?.error?.error?.globalErrors.map(
-                              (globalError) => globalError?.message
+                              (globalError) => globalError[0]?.message
                             ) || []
                           ).join(" and ")}`
                         : "Error adding patient/client";
 
-                      this.openSnackBar("Error creating patient", null);
-                    }
+                      this.openSnackBar("Error registering patient", null);
+                    } */
                   );
               }
             });

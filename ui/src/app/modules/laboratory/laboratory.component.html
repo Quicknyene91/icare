@@ -42,13 +42,20 @@
           'col-12': !params?.LISConfigurations?.isLIS
         }"
         class="laboratory-header mat-elevation-z1"
+        [ngStyle]="{
+          height: params?.LISConfigurations?.isLIS ? '90vh' : 'auto',
+          'margin-top': params?.LISConfigurations?.isLIS ? '-15px' : '',
+          'margin-left': params?.LISConfigurations?.isLIS ? '-5px' : ''
+        }"
       >
         <mat-chip-list
           class="w-100"
           cdkDropListOrientation="{{
-            !params?.LISConfigurations?.isLIS ? 'horizontal' : ''
+            params?.LISConfigurations && !params?.LISConfigurations?.isLIS
+              ? 'horizontal'
+              : ''
           }}"
-          [ngClass]="{ 'full-width-chip': params?.LISConfigurations?.isLIS }"
+          [ngClass]="{ 'full-width-chip mat-chip-list-stacked': params?.LISConfigurations?.isLIS }"
         >
           <mat-chip
             class="w-20"
@@ -109,6 +116,17 @@
             "
           >
             Sample Acceptance & Results
+          </mat-chip>
+          <mat-chip
+            *ngIf="params?.LISConfigurations?.isLIS"
+            class="w-20"
+            routerLinkActive="active-route"
+            (click)="changeRoute($event, 'sample-results-list', true)"
+            [ngClass]="{
+              'active-route': currentRoutePath === 'sample-results-list'
+            }"
+          >
+            Results
           </mat-chip>
           <mat-chip
             class="w-20"
