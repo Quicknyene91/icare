@@ -1,5 +1,6 @@
 <div *ngIf="data.sample">
-    <div>
+    <div class="mt-2">
+        <div ></div>
         <table class="table table-striped table-bordered">
             <thead>
                 <tr>
@@ -25,8 +26,11 @@
                             </td>
                             <td>ACTIVE</td>
                             <td>
-                                <button mat-button class="colored-button" (click)="onRetiringTest($event, allocation)">
+                                <button mat-button class="btn btn-danger" (click)="onRetiringTest($event, allocation)">
                                     Retire
+                                </button>
+                                <button *ngIf="this.needsToConfirm && testToRetire?.uuid === allocation?.uuid" mat-button class="btn btn-success ml-2" (click)="onConfirmRetiringTest($event, allocation)">
+                                    Confirm
                                 </button>
                             </td>
                         </tr>

@@ -285,4 +285,15 @@ export class SamplesService {
         })
       );
   }
+
+  retireSampleAllocationTest(
+    allocationUuid: any
+  ) {
+    return this.httpClient.get(BASE_URL + `lab/sample/sample-allocation`).pipe(
+      map((response: any) => {
+        return response;
+      }),
+      catchError((error) => of(error))
+    );
+  }
 }

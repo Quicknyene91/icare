@@ -6,6 +6,7 @@ import { AppState } from 'src/app/store/reducers';
 import { of, zip } from 'rxjs';
 import { LabTestsService } from 'src/app/modules/laboratory/resources/services/lab-tests.service';
 import { SamplesService } from 'src/app/shared/services/samples.service';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: "app-update-sample",
@@ -14,6 +15,9 @@ import { SamplesService } from 'src/app/shared/services/samples.service';
 })
 export class UpdateSampleComponent implements OnInit {
   testParentConcepts$: any;
+  testToRetire: any;
+  needsToConfirm: boolean = false;
+  errors: any[] = [];
   constructor(
     private dialog: MatDialog,
     private store: Store<AppState>,
@@ -25,6 +29,25 @@ export class UpdateSampleComponent implements OnInit {
   ngOnInit(): void {}
 
   onRetiringTest(event: Event, allocation: any){
-    console.log("==> Clicked Sample", allocation);
+    if(allocation?.uuid === this.testToRetire?.uuid){
+      this.needsToConfirm = !this.needsToConfirm;
+    } else {
+      this.needsToConfirm = true;
+    }
+    this.testToRetire = allocation;
+  }
+
+  onConfirmRetiringTest(){
+    console.log("==> Test to reture", this.testToRetire)
+    this.samplesService.retireSampleAllocationTest(this.testToRetire).pipe(
+      map((response) => {
+        if(response?.error && !response.message){
+          this.errors = [
+            ...this.errors,
+            response.error
+          ]
+        }
+      })
+    );
   }
 }
