@@ -212,45 +212,49 @@ export class FormService {
       // this.drugs = drugsResults?.results || [];
       // return formatDrugs(this.drugs);)
     } else if (searchControlType === "drugStock") {
-      return this.httpClient
-        .get(
+      console.log("==> Here I am")
+      const getInStock = this.httpClient.get(
           `store/stock?locationUuid=${field?.locationUuid}&q=${parameters?.q}`
         )
-        .pipe(
-          map((response) => {
-            const groupedByItemUuid = groupBy(
-              response.map((batch) => {
-                return {
-                  ...batch,
-                  itemUuid: batch?.item?.uuid,
-                };
-              }),
-              "itemUuid"
-            );
-            return Object.keys(groupedByItemUuid).map((itemUuid) => {
-              const totalQuantity = sumBy(
-                groupedByItemUuid[itemUuid].map((batchData) => {
-                  return batchData;
-                }),
-                "quantity"
-              );
+      const getOutStock = this.httpClient.get(
+          `store/stockout?locationUuid=${field?.locationUuid}&q=${parameters?.q}`
+        )
+      return zip(getInStock, getOutStock).pipe(
+        map((response) => {
+          console.log("==> Search Drug:  ", response);
+          const groupedByItemUuid = groupBy(
+            response[0].map((batch) => {
               return {
-                uuid: groupedByItemUuid[itemUuid][0]?.item?.drug?.uuid,
-                id: groupedByItemUuid[itemUuid][0]?.item?.drug?.uuid,
-                display:
-                  groupedByItemUuid[itemUuid][0]?.item?.display +
-                  " (" +
-                  totalQuantity.toLocaleString("en-US") +
-                  ") ",
-                itemUuid,
-                value: groupedByItemUuid[itemUuid][0]?.item?.drug?.uuid,
-                batches: groupedByItemUuid[itemUuid],
-                name: groupedByItemUuid[itemUuid][0]?.item?.display,
-                quantity: totalQuantity,
+                ...batch,
+                itemUuid: batch?.item?.uuid,
               };
-            });
-          })
-        );
+            }),
+            "itemUuid"
+          );
+          return Object.keys(groupedByItemUuid).map((itemUuid) => {
+            const totalQuantity = sumBy(
+              groupedByItemUuid[itemUuid].map((batchData) => {
+                return batchData;
+              }),
+              "quantity"
+            );
+            return {
+              uuid: groupedByItemUuid[itemUuid][0]?.item?.drug?.uuid,
+              id: groupedByItemUuid[itemUuid][0]?.item?.drug?.uuid,
+              display:
+                groupedByItemUuid[itemUuid][0]?.item?.display +
+                " (" +
+                totalQuantity.toLocaleString("en-US") +
+                ") ",
+              itemUuid,
+              value: groupedByItemUuid[itemUuid][0]?.item?.drug?.uuid,
+              batches: groupedByItemUuid[itemUuid],
+              name: groupedByItemUuid[itemUuid][0]?.item?.display,
+              quantity: totalQuantity,
+            };
+          });
+        })
+      );
     } else if (searchControlType === "residenceLocation") {
       return from(
         this.api.location.getAllLocations({
